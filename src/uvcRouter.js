@@ -69,17 +69,17 @@ uvcRouter.get('/focus', (req, res) => {
 });
 
 uvcRouter.get('/focus/:value', (req, res) => {
-    const zoomLevel = req.params.value;
+    const focus = req.params.value;
 
-    if (zoomLevel < 100 || zoomLevel > 500) {
+    if (focus < -32768 || focus > 32767) {
         res.status(400);
-        res.send(error);
+        res.send('Invalid value');
     }
     const camera = connect();
-    camera.set('absoluteFocus', req.params.value, error => {
+    camera.set('absoluteFocus', parseInt(focus), error => {
         if (!error) {
             res.status(200);
-            res.send('Autofocus has changed');
+            res.send('Focus has changed');
         } else {
             res.status(405);
             res.send(error);
@@ -100,7 +100,7 @@ uvcRouter.get('/zoom/:value', (req, res) => {
 
     if (zoomLevel < 100 || zoomLevel > 500) {
         res.status(400);
-        res.send(error);
+        res.send('Invalid value');
     }
 
     const camera = connect();
