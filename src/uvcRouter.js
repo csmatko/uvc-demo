@@ -2,32 +2,33 @@ import { Router } from 'express';
 import UVCControl from 'uvc-control';
 
 const uvcRouter = Router();
-let camera;
 
-uvcRouter.get('/connect', (req, res) => {
+const connect = () => {
     // Logitec C920
-    // const productId = 0x082d;
-    // const vendorId = 0x046d;
+    const productId = 0x082d;
+    const vendorId = 0x046d;
 
-    // CsM's FaceTime HD Camera
-    const vendorId = 0x05ac;
-    const productId = 0x8514;
-
-    camera = new UVCControl(vendorId, productId);
-
-    res.status(200);
-    res.send('Camera connected successfully');
+    return new UVCControl(vendorId, productId, {
+        processingUnitId: 0x011
+    });
+}
+uvcRouter.get('/connect', (req, res) => {
+    const camera = connect();
+    res.status(camera ? 200 : 405);
+    res.send(camera ? 'Camera connected successfully' : 'Camera not found');
 });
 
 uvcRouter.get('/autofocus', (req, res) => {
+    const camera = connect();
     camera.get('autoFocus', (error, value) => {
         res.status(200);
-        res.send('Autofocus current value: ' + error);
+        res.send('Autofocus current value: ' + value);
     });
 });
 
 uvcRouter.get('/autofocus/:value', (req, res) => {
-    camera.set('autoFocus', req.params.value, error => {
+    const camera = connect();
+    camera.set('autoFocus', parseInt(req.params.value), error => {
         if (!error) {
             res.status(200);
             res.send('Autofocus has changed');
@@ -39,6 +40,7 @@ uvcRouter.get('/autofocus/:value', (req, res) => {
 });
 
 uvcRouter.get('/brightness', (req, res) => {
+    const camera = connect();
     camera.get('brightness', (error, value) => {
         res.status(200);
         res.send('Brightness current value: ' + value);
@@ -46,10 +48,66 @@ uvcRouter.get('/brightness', (req, res) => {
 });
 
 uvcRouter.get('/brightness/:value', (req, res) => {
+    const camera = connect();
     camera.set('brightness', req.params.value, error => {
         if (!error) {
             res.status(200);
             res.send('Brightness has changed');
+        } else {
+            res.status(405);
+            res.send(error);
+        }
+    });
+});
+
+uvcRouter.get('/focus', (req, res) => {
+    const camera = connect();
+    camera.get('absoluteFocus', (error, value) => {
+        res.status(200);
+        res.send('Autofocus current value: ' + value);
+    });
+});
+
+uvcRouter.get('/focus/:value', (req, res) => {
+    const zoomLevel = req.params.value;
+
+    if (zoomLevel < 100 || zoomLevel > 500) {
+        res.status(400);
+        res.send(error);
+    }
+    const camera = connect();
+    camera.set('absoluteFocus', req.params.value, error => {
+        if (!error) {
+            res.status(200);
+            res.send('Autofocus has changed');
+        } else {
+            res.status(405);
+            res.send(error);
+        }
+    });
+});
+
+uvcRouter.get('/zoom', (req, res) => {
+    const camera = connect();
+    camera.get('absoluteZoom', (error, value) => {
+        res.status(200);
+        res.send('Zoom current value: ' + value);
+    });
+});
+
+uvcRouter.get('/zoom/:value', (req, res) => {
+    const zoomLevel = req.params.value;
+
+    if (zoomLevel < 100 || zoomLevel > 500) {
+        res.status(400);
+        res.send(error);
+    }
+
+    const camera = connect();
+    camera.set('absoluteZoom', req.params.value, error => {
+        if (!error) {
+            res.status(200);
+            res.send('Zoom level has changed');
         } else {
             res.status(405);
             res.send(error);
